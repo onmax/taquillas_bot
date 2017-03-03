@@ -21,14 +21,7 @@ APPLICATION_NAME = 'Google Sheets API Python Quickstart'
 
 
 def get_credentials():
-    """Gets valid user credentials from storage.
-
-    If nothing has been stored, or if the stored credentials are invalid,
-    the OAuth2 flow is completed to obtain the new credentials.
-
-    Returns:
-        Credentials, the obtained credential.
-    """
+    "
     home_dir = os.path.expanduser('~')
     credential_dir = os.path.join(home_dir, '.credentials')
     if not os.path.exists(credential_dir):
@@ -48,37 +41,18 @@ def get_credentials():
         print('Storing credentials to ' + credential_path)
     return credentials
 
-def main():
-    """Shows basic usage of the Sheets API.
-
-    Creates a Sheets API service object and prints the names and majors of
-    students in a sample spreadsheet:
-    https://docs.google.com/spreadsheets/d/1BxiMVs0XRA5nFMdKvBdBZjgmUUqptlbs74OgvE2upms/edit
-    """
-
-    #CREDENCIALES
-    credentials = get_credentials()
-    http = credentials.authorize(httplib2.Http())
-    discoveryUrl = ('https://sheets.googleapis.com/$discovery/rest?'
-                    'version=v4')
-    service = discovery.build('sheets', 'v4', http=http,
-                              discoveryServiceUrl=discoveryUrl)
-
-    spreadsheetId = '1wdXri_xe4rOTBtCHJcA3r7_43L6aaecfTzCw6qCxtq8'
-
-    rangeName = 'B2:B3'
-    result = service.spreadsheets().values().get(
-        spreadsheetId=spreadsheetId, range=rangeName).execute()
-    values = result.get('values', [])
-
-    if not values:
-        print('No data found.')
-    else:
-        for row in values:
-            row = row[0].replace("['", "")
-            row = row[0].replace("']", "")
-            print(row[0])
-
+def imprimirDatos(values):
+    cont = 1
+    final_text = ""
+    for arr in values:
+        arr_nombres = arr[0]
+        arr_apellidos = arr[1]
+        arr_matricula = arr[2]
+        arr_fechaCaducidad = arr[3]
+        final_text += str(
+            cont) + "- " + arr_apellidos + ", " + arr_nombres + "(" + arr_matricula + "): " + arr_fechaCaducidad + "\n"
+        cont += 1
+    return final_text
 
 def todos():
     credentials = get_credentials()
@@ -89,25 +63,16 @@ def todos():
                               discoveryServiceUrl=discoveryUrl)
 
     spreadsheetId = '1wdXri_xe4rOTBtCHJcA3r7_43L6aaecfTzCw6qCxtq8'
-    rangeName = 'B2:E5'
+    rangeName = 'B2:E1000'
     result = service.spreadsheets().values().get(
         spreadsheetId=spreadsheetId, range=rangeName).execute()
     values = result.get('values', [])
     if not values:
         return 'No se ha encontrado ningun dato.'
     else:
-        cont = 1
-        final_text = ""
-        for arr in values:
-            arr_nombres = arr[0]
-            arr_apellidos = arr[1]
-            arr_matricula = arr[2]
-            arr_fechaCaducidad = arr[3]
-            final_text += str(cont) + "- " + arr_apellidos + ", " + arr_nombres + "(" + arr_matricula + "): " +  arr_fechaCaducidad + "\n"
-            cont += 1
-        return final_text
+        return imprimirDatos(values)
 
-def buscar_matricula():
+def buscar_matricula(num_matricula):
     credentials = get_credentials()
     http = credentials.authorize(httplib2.Http())
     discoveryUrl = ('https://sheets.googleapis.com/$discovery/rest?'
@@ -116,22 +81,27 @@ def buscar_matricula():
                               discoveryServiceUrl=discoveryUrl)
 
     spreadsheetId = '1wdXri_xe4rOTBtCHJcA3r7_43L6aaecfTzCw6qCxtq8'
-    rangeName = 'B2:E5'
+    rangeName = 'D2:D1000'
+
     result = service.spreadsheets().values().get(
         spreadsheetId=spreadsheetId, range=rangeName).execute()
     values = result.get('values', [])
+
     if not values:
-        return 'No se ha encontrado ningun dato.'
+        return 'No se ha encontrado ningún dato.'
     else:
-        cont = 1
-        final_text = ""
-        for arr in values:
-            arr_nombres = arr[0]
-            arr_apellidos = arr[1]
-            arr_matricula = arr[2]
-            arr_fechaCaducidad = arr[3]
-            final_text += str(cont) + "- " + arr_apellidos + ", " + arr_nombres + "(" + arr_matricula + "): " +  arr_fechaCaducidad + "\n"
-            cont += 1
-        return final_text
+        cont = 2
+        for i in values:
+            if (i[0] == num_matricula):
+                rangeName = 'B' + str(cont) + ':E' + str(cont)
+                result = service.spreadsheets().values().get(
+                    spreadsheetId=spreadsheetId, range=rangeName).execute()
+                values = result.get('values', [])
+                return imprimirDatos(values)
+            else:
+                cont += 1
+
+
+    return "No se ha encontrado ninguna matrícula :/"
 if __name__ == '__main__':
     main()
