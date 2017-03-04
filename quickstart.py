@@ -12,7 +12,7 @@ try:
     flags = argparse.ArgumentParser(parents=[tools.argparser]).parse_args()
 except ImportError:
     flags = None
-
+from telebot import types
 # If modifying these scopes, delete your previously saved credentials
 # at ~/.credentials/sheets.googleapis.com-python-quickstart.json
 SCOPES = 'https://www.googleapis.com/auth/spreadsheets.readonly'
@@ -21,7 +21,14 @@ APPLICATION_NAME = 'Google Sheets API Python Quickstart'
 
 
 def get_credentials():
-    "
+    """Gets valid user credentials from storage.
+
+    If nothing has been stored, or if the stored credentials are invalid,
+    the OAuth2 flow is completed to obtain the new credentials.
+
+    Returns:
+        Credentials, the obtained credential.
+    """
     home_dir = os.path.expanduser('~')
     credential_dir = os.path.join(home_dir, '.credentials')
     if not os.path.exists(credential_dir):
@@ -41,20 +48,28 @@ def get_credentials():
         print('Storing credentials to ' + credential_path)
     return credentials
 
-def imprimirDatos(values):
-    cont = 1
+def imprimirDatos(values, contPG):
+    if(contPG != 0):
+        maximo = contPG * 50
+        minimo = (contPG-1) * 50
+
+
     final_text = ""
     for arr in values:
-        arr_nombres = arr[0]
-        arr_apellidos = arr[1]
-        arr_matricula = arr[2]
-        arr_fechaCaducidad = arr[3]
-        final_text += str(
-            cont) + "- " + arr_apellidos + ", " + arr_nombres + "(" + arr_matricula + "): " + arr_fechaCaducidad + "\n"
-        cont += 1
-    return final_text
+        if('maximo' not in locals() or contPG != 0 and contPG> minimo and contPG <= maximo):
+            arr_nombres = arr[0]
+            arr_apellidos = arr[1]
+            arr_matricula = arr[2]
+            final_text += "<b>" + str(contPG) + "</b>- " + arr_apellidos + ", " + arr_nombres + " (" + arr_matricula + ")\n"
+            contPG += 1
+        else:
+            contPG += 1
+    if(len(final_text) == 0):
+        return "No se ha encontrado ningún dato"
+    else:
+        return final_text
 
-def todos():
+def todos(contPG):
     credentials = get_credentials()
     http = credentials.authorize(httplib2.Http())
     discoveryUrl = ('https://sheets.googleapis.com/$discovery/rest?'
@@ -63,14 +78,20 @@ def todos():
                               discoveryServiceUrl=discoveryUrl)
 
     spreadsheetId = '1wdXri_xe4rOTBtCHJcA3r7_43L6aaecfTzCw6qCxtq8'
-    rangeName = 'B2:E1000'
+    rangeName = 'B2:D1000'
     result = service.spreadsheets().values().get(
         spreadsheetId=spreadsheetId, range=rangeName).execute()
     values = result.get('values', [])
     if not values:
         return 'No se ha encontrado ningun dato.'
     else:
-        return imprimirDatos(values)
+        values = sorted(values, key=lambda values: values[1])
+        return imprimirDatos(values, contPG)
+
+
+
+
+
 
 def buscar_matricula(num_matricula):
     credentials = get_credentials()
@@ -93,15 +114,49 @@ def buscar_matricula(num_matricula):
         cont = 2
         for i in values:
             if (i[0] == num_matricula):
-                rangeName = 'B' + str(cont) + ':E' + str(cont)
+                rangeName = 'B' + str(cont) + ':D' + str(cont)
                 result = service.spreadsheets().values().get(
                     spreadsheetId=spreadsheetId, range=rangeName).execute()
                 values = result.get('values', [])
-                return imprimirDatos(values)
+                contPG = 1
+                return imprimirDatos(values, contPG)
             else:
                 cont += 1
 
+def buscar_nombre(nombre_a_buscar):
+    credentials = get_credentials()
+    http = credentials.authorize(httplib2.Http())
+    discoveryUrl = ('https://sheets.googleapis.com/$discovery/rest?'
+                    'version=v4')
+    service = discovery.build('sheets', 'v4', http=http,
+                              discoveryServiceUrl=discoveryUrl)
 
-    return "No se ha encontrado ninguna matrícula :/"
+    spreadsheetId = '1wdXri_xe4rOTBtCHJcA3r7_43L6aaecfTzCw6qCxtq8'
+    rangeName = 'B2:B1000'
+
+    result = service.spreadsheets().values().get(
+        spreadsheetId=spreadsheetId, range=rangeName).execute()
+    values = result.get('values', [])
+
+    if not values:
+        return 'No se ha encontrado ningún dato.'
+    else:
+
+        cont = 2
+        resultado = ""
+        for i in values:
+            print(i)
+            if (i[0] == nombre_a_buscar):
+                rangeName = 'B' + str(cont) + ':D' + str(cont)
+                result = service.spreadsheets().values().get(
+                    spreadsheetId=spreadsheetId, range=rangeName).execute()
+                values = result.get('values', [])
+
+                resultado = imprimirDatos(values, 0) + "\n"
+            else:
+                cont += 1
+
+    return resultado
+
 if __name__ == '__main__':
     main()
