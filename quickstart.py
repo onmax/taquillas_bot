@@ -53,7 +53,6 @@ def imprimirDatos(values, contPG):
         maximo = contPG * 50
         minimo = (contPG-1) * 50
 
-
     final_text = ""
     for arr in values:
         if('maximo' not in locals() or contPG != 0 and contPG> minimo and contPG <= maximo):
@@ -98,7 +97,7 @@ def todos(contPG):
         return imprimirDatos(values, contPG)
 
 
-def buscar_matricula(num_matricula, time):
+def buscar_matricula(num_matricula, time, message):
     credentials = get_credentials()
     http = credentials.authorize(httplib2.Http())
     discoveryUrl = ('https://sheets.googleapis.com/$discovery/rest?'
@@ -125,12 +124,12 @@ def buscar_matricula(num_matricula, time):
                     resultado = ""
                 resultado += "<b>y" + num_matricula + ": </b>" + i[1] + ", " + i[0]+ "\n"
                 limite += 1
-        print(time + ": " + resultado.replace("<b>", "").replace("</b>", "").replace(":", " -"))
+        print(message.from_user.first_name + "-> " + time.strftime("%d/%m/%y || %H:%M:%S: ") + ":\n" + resultado.replace("<b>", "").replace("</b>", "").replace(":", " -"))
         return resultado
 
 
 
-def buscar_nombre(nombre, time):
+def buscar_nombre(nombre):
     credentials = get_credentials()
     http = credentials.authorize(httplib2.Http())
     discoveryUrl = ('https://sheets.googleapis.com/$discovery/rest?'
@@ -150,14 +149,54 @@ def buscar_nombre(nombre, time):
         resultado="No se ha encontrado nada."
         limite=0
         minus = nombre.lower()
+        minus = minus.replace("á", "a").replace("í", "i").replace("é", "e").replace("ó", "o").replace("ú","u")
         for i in values:
+            final = i[0]
             i[0] = i[0].lower()
+            i[0] = i[0].replace("á", "a").replace("í", "i").replace("é", "e").replace("ó", "o").replace("ú","u")
             if minus in i[0] and limite < 75:
                 if limite == 0:
                     resultado = ""
                 limite += 1
-                resultado += str(limite) + "- <b>" + i[0] + " </b>" + i[1] + ", " + i[2]+ "\n"
-        print(time + ": " + resultado.replace("<b>", "").replace("</b>", ""))
+                resultado += str(limite) + "- <b>" + final + " </b>" + i[1] + ", " + i[2]+ "\n"
+        print(resultado.replace("<b>", "").replace("</b>", ""))
+        return resultado
+
+def buscar_apellido(apellido):
+    credentials = get_credentials()
+    http = credentials.authorize(httplib2.Http())
+    discoveryUrl = ('https://sheets.googleapis.com/$discovery/rest?'
+                    'version=v4')
+    service = discovery.build('sheets', 'v4', http=http,
+                              discoveryServiceUrl=discoveryUrl)
+
+    spreadsheetId = '1wdXri_xe4rOTBtCHJcA3r7_43L6aaecfTzCw6qCxtq8'
+    rangeName = 'B2:D1000'
+
+    result = service.spreadsheets().values().get(
+        spreadsheetId=spreadsheetId, range=rangeName).execute()
+    values = result.get('values', [])
+    if not values:
+        return 'No se ha encontrado ningún dato.'
+    else:
+        resultado="No se ha encontrado nada."
+        limite=0
+        apellido_par = apellido.lower()
+        apellido_par = apellido_par.replace("á", "a").replace("í", "i").replace("é", "e").replace("ó", "o").replace("ú","u")
+        for i in values:
+            final = i[1]
+            i[1] = i[1].lower()
+            i[1] = i[1].replace("á","a").replace("í","i").replace("é","e").replace("ó","o").replace("ú","u")
+            apellido_partes = i[1].split()
+            primer_apellido = apellido_partes[0]
+            if len(apellido_partes) != 1:
+                segundo_apellido = apellido_partes[1]
+            if (apellido_par in primer_apellido or apellido_par in segundo_apellido or apellido_par in i[1]) and limite < 75:
+                if limite == 0:
+                    resultado = ""
+                limite += 1
+                resultado += str(limite) +"- "+ i[0] + " <b>" + final + "</b>, " + i[2]+ "\n"
+        print(resultado.replace("<b>", "").replace("</b>", ""))
         return resultado
 
 if __name__ == '__main__':
