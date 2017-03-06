@@ -1,7 +1,7 @@
 from __future__ import print_function
 import httplib2
 import os
-
+import time
 from apiclient import discovery
 from oauth2client import client
 from oauth2client import tools
@@ -57,9 +57,18 @@ def imprimirDatos(values, contPG):
     final_text = ""
     for arr in values:
         if('maximo' not in locals() or contPG != 0 and contPG> minimo and contPG <= maximo):
-            arr_nombres = arr[0]
-            arr_apellidos = arr[1]
-            arr_matricula = arr[2]
+            if(len(arr[0])==0):
+                arr_nombres = "NONE"
+            else:
+                arr_nombres = arr[0]
+            if (len(arr[1]) == 0):
+                arr_apellidos = "NONE"
+            else:
+                arr_apellidos = arr[1]
+            if (arr[2] != 0):
+                arr_matricula = "NONE"
+            else:
+                arr_matricula = arr[2]
             final_text += "<b>" + str(contPG) + "</b>- " + arr_apellidos + ", " + arr_nombres + " (" + arr_matricula + ")\n"
             contPG += 1
         else:
@@ -89,11 +98,7 @@ def todos(contPG):
         return imprimirDatos(values, contPG)
 
 
-
-
-
-
-def buscar_matricula(num_matricula):
+def buscar_matricula(num_matricula, time):
     credentials = get_credentials()
     http = credentials.authorize(httplib2.Http())
     discoveryUrl = ('https://sheets.googleapis.com/$discovery/rest?'
@@ -102,28 +107,30 @@ def buscar_matricula(num_matricula):
                               discoveryServiceUrl=discoveryUrl)
 
     spreadsheetId = '1wdXri_xe4rOTBtCHJcA3r7_43L6aaecfTzCw6qCxtq8'
-    rangeName = 'D2:D1000'
+    rangeName = 'B2:D1000'
 
     result = service.spreadsheets().values().get(
         spreadsheetId=spreadsheetId, range=rangeName).execute()
     values = result.get('values', [])
-
     if not values:
         return 'No se ha encontrado ningún dato.'
     else:
-        cont = 2
+        resultado = "No se ha encontrado nada."
+        num_matricula = num_matricula.replace("y", "")
+        limite = 0
         for i in values:
-            if (i[0] == num_matricula):
-                rangeName = 'B' + str(cont) + ':D' + str(cont)
-                result = service.spreadsheets().values().get(
-                    spreadsheetId=spreadsheetId, range=rangeName).execute()
-                values = result.get('values', [])
-                contPG = 1
-                return imprimirDatos(values, contPG)
-            else:
-                cont += 1
+            if len(i) == 3 and num_matricula in i[2] and limite < 75:
+                i[2] = i[2].replace("y", "")
+                if limite == 0:
+                    resultado = ""
+                resultado += "<b>y" + num_matricula + ": </b>" + i[1] + ", " + i[0]+ "\n"
+                limite += 1
+        print(time + ": " + resultado.replace("<b>", "").replace("</b>", "").replace(":", " -"))
+        return resultado
 
-def buscar_nombre(nombre_a_buscar):
+
+
+def buscar_nombre(nombre, time):
     credentials = get_credentials()
     http = credentials.authorize(httplib2.Http())
     discoveryUrl = ('https://sheets.googleapis.com/$discovery/rest?'
@@ -132,31 +139,26 @@ def buscar_nombre(nombre_a_buscar):
                               discoveryServiceUrl=discoveryUrl)
 
     spreadsheetId = '1wdXri_xe4rOTBtCHJcA3r7_43L6aaecfTzCw6qCxtq8'
-    rangeName = 'B2:B1000'
+    rangeName = 'B2:D1000'
 
     result = service.spreadsheets().values().get(
         spreadsheetId=spreadsheetId, range=rangeName).execute()
     values = result.get('values', [])
-
     if not values:
         return 'No se ha encontrado ningún dato.'
     else:
-
-        cont = 2
-        resultado = ""
+        resultado="No se ha encontrado nada."
+        limite=0
+        minus = nombre.lower()
         for i in values:
-            print(i)
-            if (i[0] == nombre_a_buscar):
-                rangeName = 'B' + str(cont) + ':D' + str(cont)
-                result = service.spreadsheets().values().get(
-                    spreadsheetId=spreadsheetId, range=rangeName).execute()
-                values = result.get('values', [])
-
-                resultado = imprimirDatos(values, 0) + "\n"
-            else:
-                cont += 1
-
-    return resultado
+            i[0] = i[0].lower()
+            if minus in i[0] and limite < 75:
+                if limite == 0:
+                    resultado = ""
+                limite += 1
+                resultado += str(limite) + "- <b>" + i[0] + " </b>" + i[1] + ", " + i[2]+ "\n"
+        print(time + ": " + resultado.replace("<b>", "").replace("</b>", ""))
+        return resultado
 
 if __name__ == '__main__':
     main()
